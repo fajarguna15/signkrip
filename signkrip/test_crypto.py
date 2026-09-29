@@ -71,6 +71,9 @@ class TestSignKripCrypto(unittest.TestCase):
         """7. Test Verifikasi dengan Kunci Publik Salah -> HARUS GAGAL"""
         priv_key_A, pub_b64_A = self.crypto.generate_keypair("ECDSA-P256")
         _, pub_b64_B = self.crypto.generate_keypair("ECDSA-P256")
+        sig_A = self.crypto.sign_document(priv_key_A, self.sample_document, "ECDSA-P256")
+        is_valid = self.crypto.verify_signature(pub_b64_B, sig_A, self.sample_document, "ECDSA-P256")
+        self.assertFalse(is_valid)
 
     def test_8_multi_signer_verification(self):
         """8. Test Fitur Pengayaan: Beberapa Penandatangan (Multi-Signer) pada Satu Dokumen"""
