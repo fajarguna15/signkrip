@@ -1,0 +1,15 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments & IDE
+.env
+venv/
+env/
+.vscode/
+.idea/
+
+# Uploaded / generated temporary files
+*.pub
+*.sign.json

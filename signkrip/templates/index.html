@@ -1,0 +1,794 @@
+i
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="SignKrip - Aplikasi Tanda Tangan Digital Berbasis Python Flask & Kriptografi RSA/ECDSA dengan QR-Code dan Pengujian Tamper.">
+    <title>SignKrip — Digital Signature</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f46e5'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-size='18' fill='white' font-weight='bold'>S</text></svg>">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+
+<body>
+    <div id="toast-container"></div>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo"></div>
+                <div class="sidebar-brand">
+                    <h1>SignKrip</h1>
+                    <span>Flask Cryptography</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <div class="menu-label">Menu Utama</div>
+
+                <a class="nav-item active" data-page="dashboard">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                    </svg>
+                    Dashboard
+                </a>
+
+                <a class="nav-item" data-page="generate">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path
+                            d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zM12 7l.01 0m-2 2l.01 0m-2 2l.01 0" />
+                    </svg>
+                    Generate Kunci
+                </a>
+
+                <a class="nav-item" data-page="sign">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                    Tanda Tangan
+                </a>
+
+                <a class="nav-item" data-page="verify">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        <polyline points="9 11 12 14 22 4" />
+                    </svg>
+                    Verifikasi Dokumen
+                </a>
+
+                <div class="menu-label" style="margin-top: 16px;">Pengujian & Data</div>
+
+                <a class="nav-item" data-page="testing">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M9 3v11l-3 3v2h12v-2l-3-3V3z" />
+                        <line x1="9" y1="9" x2="15" y2="9" />
+                    </svg>
+                    Pengujian & Benchmark
+                </a>
+
+                <a class="nav-item" data-page="history">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    Riwayat Dokumen
+                </a>
+
+                <a class="nav-item" data-page="about">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                    </svg>
+                    Tentang Aplikasi
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Wrapper -->
+        <div class="main-wrapper">
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="page-title" id="current-page-title">Dashboard Utama</div>
+
+                <div class="topbar-status">
+                    <div class="key-status-badge">
+                        <span class="status-indicator none" id="global-key-indicator"></span>
+                        <span id="global-key-status-text">Kunci Privat: Belum Terisi</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Body -->
+            <main class="content-body">
+
+                <!-- 1. DASHBOARD SECTION -->
+                <section class="page-section active" id="section-dashboard">
+                    <div class="header-banner">
+                        <h2>SignKrip</h2>
+                        <p>Platform Tanda Tangan Digital & Verifikasi Keaslian Dokumen Berbasis Python Flask Backend</p>
+                    </div>
+
+                    <div class="grid-4" style="margin-bottom: 24px;">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="stat-val" id="dash-stat-history-count">0</div>
+                                <div class="stat-label">Dokumen Ditandatangani</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon"
+                                style="color: var(--secondary); background-color: rgba(8, 145, 178, 0.1);">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path
+                                        d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zM12 7l.01 0" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="stat-val" id="dash-stat-algo">ECDSA P-256</div>
+                                <div class="stat-label">Skema Kriptografi</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon" style="color: var(--success); background-color: var(--success-bg);">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                    <polyline points="22 4 12 14.01 9 11.01" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="stat-val">SHA-256</div>
+                                <div class="stat-label">Fungsi Hash Dokumen</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon"
+                                style="color: var(--accent); background-color: rgba(139, 92, 246, 0.1);">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="stat-val">AES-GCM</div>
+                                <div class="stat-label">Enkripsi Kunci Privat</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <polygon points="10 8 16 12 10 16 10 8" />
+                                    </svg>
+                                    Aksi Cepat
+                                </div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <button class="btn btn-primary btn-full" onclick="navigateTo('generate')">
+                                    Pembangkitan Pasangan Kunci Baru
+                                </button>
+                                <button class="btn btn-secondary btn-full" onclick="navigateTo('sign')">
+                                    Tanda Tangan Dokumen Baru
+                                </button>
+                                <button class="btn btn-secondary btn-full" onclick="navigateTo('verify')">
+                                    Verifikasi Keaslian Dokumen
+                                </button>
+                                <button class="btn btn-secondary btn-full" onclick="navigateTo('testing')">
+                                    Jalankan Uji Pengujian & Benchmark (Flask API)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                    </svg>
+                                    Status Kunci Aktif Sesi
+                                </div>
+                            </div>
+                            <div id="dash-key-info-box">
+                                <div class="alert alert-warning">
+                                    <span> Belum ada pasangan kunci yang dibuat dalam sesi ini. Silakan buka menu
+                                        <strong>Generate Kunci</strong> terlebih dahulu.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. GENERATE KEY SECTION -->
+                <section class="page-section" id="section-generate">
+                    <div class="header-banner">
+                        <h2>Pembangkitan Pasangan Kunci</h2>
+                        <p>Buat pasangan kunci Kriptografi RSA-PSS 2048-bit atau ECDSA P-256 via Python Flask
+                            Cryptography Engine</p>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path
+                                            d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zM12 7l.01 0" />
+                                    </svg>
+                                    Form Buat Kunci
+                                </div>
+                            </div>
+
+                            <form id="form-generate-key" onsubmit="handleGenerateKey(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Skema / Algoritma Kriptografi</label>
+                                    <select class="form-control" id="gen-algorithm">
+                                        <option value="ECDSA-P256">ECDSA P-256</option>
+                                        <option value="RSA-PSS-2048">RSA-PSS 2048-bit</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Kata Sandi Enkripsi Kunci Privat</label>
+                                    <input type="password" class="form-control" id="gen-password"
+                                        placeholder="Masukkan kata sandi pengunci..." required minlength="4">
+                                    <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">
+                                        Kunci privat disimpan terenkripsi (AES-256-GCM + PBKDF2 100k iterasi), tidak
+                                        pernah dikirim polos.
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary btn-full" id="btn-gen-key">
+                                    Generasi Pasangan Kunci (Python Backend)
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="16 18 22 12 16 6" />
+                                        <polyline points="8 6 2 12 8 18" />
+                                    </svg>
+                                    Kunci Publik (SPKI / Base64)
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Data Kunci Publik (Siap Dibagikan)</label>
+                                <div class="code-box" id="gen-public-key-out">Belum ada kunci publik yang digenerasi.
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-secondary btn-full" onclick="copyPublicKey()"
+                                    id="btn-copy-pubkey" disabled>
+                                    Salin Kunci Publik
+                                </button>
+                                <button class="btn btn-secondary btn-full" onclick="downloadPublicKey()"
+                                    id="btn-dl-pubkey" disabled>
+                                    Unduh Kunci Publik (.pub)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. SIGN DOCUMENT SECTION -->
+                <section class="page-section" id="section-sign">
+                    <div class="header-banner">
+                        <h2>Tanda Tangan Digital Dokumen (PDF, Word, TXT)</h2>
+                        <p>Tandatangani berkas dokumen (PDF, Word <code>.doc/.docx</code>, atau Teks <code>.txt</code>).
+                            Untuk PDF, QR Code & metadata disisipkan ke dalam file. Untuk Word dan TXT, sistem mengunduh
+                            bukti tanda tangan <code>.signkrip</code>.</p>
+                    </div>
+
+                    <div class="grid-2">
+                        <!-- Left Card: Form Input & Metadata -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                        <polyline points="14 2 14 8 20 8" />
+                                    </svg>
+                                    Pilih Dokumen & Metadata Penandatangan
+                                </div>
+                            </div>
+
+                            <form id="form-sign-doc" onsubmit="handleSignDocument(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Unggah Berkas Dokumen (PDF, Word, TXT)</label>
+                                    <div class="file-dropzone" id="sign-dropzone">
+                                        <input type="file" id="sign-file-input" accept=".pdf,.doc,.docx,.txt"
+                                            onchange="handleSignFileSelect(event)" required>
+                                        <div class="dropzone-icon">
+                                            <svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                <polyline points="17 8 12 3 7 8" />
+                                                <line x1="12" y1="3" x2="12" y2="15" />
+                                            </svg>
+                                        </div>
+                                        <div class="dropzone-text" id="sign-file-name">Pilih atau seret berkas PDF,
+                                            Word, atau TXT ke sini</div>
+                                        <div class="dropzone-hint" id="sign-file-size">Hanya mendukung format PDF, Word
+                                            (.doc/.docx), dan Teks (.txt)</div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Nama Penandatangan</label>
+                                    <input type="text" class="form-control" id="sign-name"
+                                        placeholder="Contoh: Dr. Ir. Budi Santoso, M.T." required>
+                                </div>
+
+                                <div class="grid-2">
+                                    <div class="form-group">
+                                        <label class="form-label">Jabatan</label>
+                                        <input type="text" class="form-control" id="sign-role"
+                                            placeholder="Contoh: Dekan / Kepala Lab" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Institusi / Divisi</label>
+                                        <input type="text" class="form-control" id="sign-institution"
+                                            placeholder="Contoh: Fakultas Ilmu Komputer" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Kata Sandi Kunci Privat</label>
+                                    <input type="password" class="form-control" id="sign-password"
+                                        placeholder="Masukkan kata sandi pengunci privat..." required>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary btn-full" id="btn-sign-submit">
+                                    ✍️ Tandatangani & Unduh Berkas Bertanda Tangan
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Right Card: QR Position Settings & Info -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title" style="color: #059669; font-weight: 700;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                        <rect x="7" y="7" width="3" height="3" />
+                                        <rect x="14" y="7" width="3" height="3" />
+                                        <rect x="7" y="14" width="3" height="3" />
+                                    </svg>
+                                    Pengaturan Posisi QR Code (Khusus PDF)
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info" style="margin-bottom: 16px;">
+                                <span>📌 <strong>PDF:</strong> QR Code disisipkan ke halaman PDF. <strong>Word &
+                                        TXT:</strong> Sistem menghasilkan file bukti <code>.signkrip</code> yang berisi
+                                    QR Code dan bukti kriptografi.</span>
+                            </div>
+
+                            <!-- Controls -->
+                            <div style="margin-bottom: 16px;">
+                                <div style="display: flex; gap: 8px; align-items: flex-end; margin-bottom: 12px;">
+                                    <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                                        <label class="form-label" style="font-size: 11px;">Halaman</label>
+                                        <input type="number" class="form-control" id="stamp-page" value="1" min="1">
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                                        <label class="form-label" style="font-size: 11px;">Koordinat X</label>
+                                        <input type="number" class="form-control" id="stamp-x" value="135">
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                                        <label class="form-label" style="font-size: 11px;">Koordinat Y</label>
+                                        <input type="number" class="form-control" id="stamp-y" value="100">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-warning" style="margin-bottom: 16px;">
+                                <span>💡 <strong>Tips:</strong> Untuk file PDF, koordinat (0,0) dimulai dari pojok kiri
+                                    bawah.</span>
+                            </div>
+
+                            <!-- Signing Progress -->
+                            <div id="sign-progress-box" style="display: none; margin-bottom: 16px;">
+                                <div class="progress-bar-wrap">
+                                    <div class="progress-bar-fill" id="sign-progress-fill" style="width: 50%;"></div>
+                                </div>
+                                <div
+                                    style="font-size: 12px; color: var(--text-muted); margin-top: 6px; text-align: center;">
+                                    ⏳ Memproses tanda tangan digital...
+                                </div>
+                            </div>
+
+                            <!-- Success result -->
+                            <div id="sign-result-box" style="display: none;">
+                                <div class="alert alert-success">
+                                    <div style="font-size: 14px; font-weight: 700; margin-bottom: 4px;">✅ Tanda Tangan
+                                        Berhasil!</div>
+                                    <div>Berkas bertanda tangan digital telah berhasil diunduh dan siap digunakan.</div>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 8px; margin-top: 12px;">
+                                    <label class="form-label" style="font-size: 11px;">Nilai Hash Dokumen Asli
+                                        (SHA-256)</label>
+                                    <div class="code-box" id="sign-hash-out" style="font-size: 10px; padding: 6px;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. VERIFY DOCUMENT SECTION -->
+                <section class="page-section" id="section-verify">
+                    <div class="header-banner">
+                        <h2>Verifikasi Keaslian Dokumen (PDF, Word, TXT)</h2>
+                        <p>Unggah file PDF bertanda tangan ATAU berkas Word/TXT beserta berkas bukti tanda tangan
+                            <code>.signkrip</code> untuk memverifikasi keaslian dan integritas dokumen.
+                        </p>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="17 8 12 3 7 8" />
+                                        <line x1="12" y1="3" x2="12" y2="15" />
+                                    </svg>
+                                    Unggah Berkas Verifikasi
+                                </div>
+                            </div>
+
+                            <form id="form-verify-doc" onsubmit="handleVerifyDocument(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Unggah Berkas Utama (PDF, Word .doc/.docx, atau
+                                        TXT)</label>
+                                    <div class="file-dropzone">
+                                        <input type="file" id="verify-doc-input" accept=".pdf,.doc,.docx,.txt"
+                                            onchange="handleVerifyDocSelect(event)" required>
+                                        <div class="dropzone-icon">
+                                            <svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                                <polyline points="9 11 12 14 22 4" />
+                                            </svg>
+                                        </div>
+                                        <div class="dropzone-text" id="verify-doc-name">Pilih atau seret berkas PDF,
+                                            Word, atau TXT di sini</div>
+                                        <div class="dropzone-hint">File PDF bertanda tangan ATAU berkas Word
+                                            (.doc/.docx) / TXT</div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group" id="verify-sigfile-group">
+                                    <label class="form-label">Unggah Berkas Bukti Tanda Tangan (Opsional untuk PDF,
+                                        Diperlukan untuk Word/TXT)</label>
+                                    <div class="file-dropzone" style="padding: 12px;">
+                                        <input type="file" id="verify-sigfile-input" accept=".signkrip,.json"
+                                            onchange="handleVerifySigFileSelect(event)">
+                                        <div class="dropzone-text" id="verify-sigfile-name" style="font-size: 12px;">
+                                            Pilih berkas bukti <code>.signkrip</code> (jika memverifikasi berkas
+                                            Word/TXT)</div>
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-info" style="margin-bottom: 16px;">
+                                    <span>📌 Sistem akan membaca bukti tanda tangan digital dan memverifikasi bahwa
+                                        tidak ada satu karakter/byte pun yang diubah dari berkas asli.</span>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary btn-full" id="btn-verify-submit">
+                                    🔍 Verifikasi Keaslian Dokumen
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                        <polyline points="22 4 12 14.01 9 11.01" />
+                                    </svg>
+                                    Hasil Status Verifikasi
+                                </div>
+                            </div>
+
+                            <div id="verify-result-empty">
+                                <div class="alert alert-info">
+                                    <span>Unggah berkas PDF yang telah ditandatangani lalu klik tombol
+                                        <strong>Verifikasi Keaslian</strong>.</span>
+                                </div>
+                            </div>
+
+                            <div id="verify-result-box" style="display: none;">
+                                <div id="verify-status-banner"></div>
+
+                                <div style="margin-top: 16px;">
+                                    <table class="data-table">
+                                        <tr>
+                                            <th>Penandatangan</th>
+                                            <td id="vres-name">-</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Jabatan / Institusi</th>
+                                            <td id="vres-role">-</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Tanggal Tanda Tangan</th>
+                                            <td id="vres-date">-</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Skema Kriptografi</th>
+                                            <td id="vres-algo">-</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Integritas Metadata</th>
+                                            <td id="vres-hash-match">-</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. TESTING & BENCHMARK SECTION -->
+                <section class="page-section" id="section-testing">
+                    <div class="header-banner">
+                        <h2>Pengujian & Benchmark</h2>
+
+                    </div>
+
+                    <!-- 30x Iteration Benchmark Card -->
+                    <div class="card" style="margin-bottom: 24px;">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path
+                                        d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                                </svg>
+                                1. Pengujian Benchmark 30x Percobaan (Waktu & Ukuran Signature - Python Engine)
+                            </div>
+                            <button class="btn btn-primary" onclick="runBenchmark30(event)" id="btn-run-benchmark">
+                                ▶ Jalankan Uji Iterasi
+                            </button>
+                        </div>
+
+                        <div id="benchmark-progress-box" style="display: none; margin-bottom: 16px;">
+                            <div style="font-size: 12.5px; font-weight: 600;" id="benchmark-status-text">Memproses
+                                iterasi di Python Flask...</div>
+                            <div class="progress-bar-wrap">
+                                <div class="progress-bar-fill" id="benchmark-progress-fill"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid-4" style="margin-bottom: 16px;">
+                            <div class="stat-card">
+                                <div>
+                                    <div class="stat-val" id="bench-avg-sign-time">-</div>
+                                    <div class="stat-label">Rata-rata Waktu Sign (ms)</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div>
+                                    <div class="stat-val" id="bench-avg-verify-time">-</div>
+                                    <div class="stat-label">Rata-rata Waktu Verify (ms)</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div>
+                                    <div class="stat-val" id="bench-sig-size">-</div>
+                                    <div class="stat-label">Ukuran Signature (Bytes)</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div>
+                                    <div class="stat-val" id="bench-pubkey-size">-</div>
+                                    <div class="stat-label">Ukuran Public Key (Bytes)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Validation Tests Grid -->
+                    <div class="grid-3">
+                        <!-- Uji Tamper -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path
+                                            d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                        <line x1="12" y1="9" x2="12" y2="13" />
+                                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                                    </svg>
+                                    2. Uji Tamper (Ubah 1 Byte)
+                                </div>
+                            </div>
+                            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+
+                            </p>
+                            <button class="btn btn-secondary btn-full" onclick="runTamperTest(event)">
+                                Uji Tamper Dokumen
+                            </button>
+                            <div id="tamper-test-result" style="margin-top: 14px;"></div>
+                        </div>
+
+                        <!-- Uji Kunci Salah -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                    </svg>
+                                    3. Uji Kunci Salah
+                                </div>
+                            </div>
+                            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+
+                            </p>
+                            <button class="btn btn-secondary btn-full" onclick="runWrongKeyTest(event)">
+                                Uji Kunci Publik Salah
+                            </button>
+                            <div id="wrongkey-test-result" style="margin-top: 14px;"></div>
+                        </div>
+
+                        <!-- Uji QR Code Palsu -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                        <rect x="7" y="7" width="3" height="3" />
+                                        <rect x="14" y="7" width="3" height="3" />
+                                        <rect x="7" y="14" width="3" height="3" />
+                                    </svg>
+                                    4. Uji QR Code Palsu
+                                </div>
+                            </div>
+                            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+
+                            </p>
+                            <button class="btn btn-secondary btn-full" onclick="runForgedQRTest(event)">
+                                Uji Pemalsuan QR-Code
+                            </button>
+                            <div id="forgedqr-test-result" style="margin-top: 14px;"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6. HISTORY SECTION -->
+                <section class="page-section" id="section-history">
+                    <div class="header-banner">
+                        <h2>Riwayat Dokumen Ditandatangani</h2>
+                        <p>Daftar riwayat tanda tangan digital yang tersimpan di sesi server Flask & localStorage
+                            peramban</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <polyline points="12 6 12 12 16 14" />
+                                </svg>
+                                Daftar Dokumen
+                            </div>
+                            <button class="btn btn-danger" onclick="clearHistory()" id="btn-clear-history">
+                                Hapus Semua Riwayat
+                            </button>
+                        </div>
+
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nama Berkas</th>
+                                        <th>Penandatangan</th>
+                                        <th>Jabatan & Institusi</th>
+                                        <th>Tanggal</th>
+                                        <th>Skema</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table-body">
+                                    <tr>
+                                        <td colspan="7"
+                                            style="text-align: center; color: var(--text-muted); padding: 24px;">Belum
+                                            ada riwayat dokumen yang ditandatangani.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 7. ABOUT SECTION -->
+                <section class="page-section" id="section-about">
+                    <div class="header-banner">
+                        <h2>Tentang Aplikasi SignKrip</h2>
+                        <p>Spesifikasi teknis backend Python Cryptography & fitur keamanan sistem</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">ℹ️ Informasi Sistem</div>
+                        </div>
+                        <table class="data-table">
+                            <tr>
+                                <th>Nama Aplikasi</th>
+                                <td>SignKrip Digital Signature (Python Flask)</td>
+                            </tr>
+                            <tr>
+                                <th>Versi</th>
+                                <td>2.0.0 (Python Flask & cryptography Engine)</td>
+                            </tr>
+                            <tr>
+                                <th>Backend Framework</th>
+                                <td>Python 3.14 + Flask 3.1</td>
+                            </tr>
+                            <tr>
+                                <th>Library Kriptografi</th>
+                                <td>cryptography 50.0.1 (Hazmat primitives)</td>
+                            </tr>
+                            <tr>
+                                <th>Spesifikasi Kunci</th>
+                                <td>RSA 2048-bit (PSS Scheme) & ECDSA P-256 (secp256r1)</td>
+                            </tr>
+                            <tr>
+                                <th>Pengunci Kunci Privat</th>
+                                <td>PBKDF2 100,000 Iterasi + AES-256-GCM</td>
+                            </tr>
+                            <tr>
+                                <th>Hash Dokumen</th>
+                                <td>SHA-256 Cryptographic Hash</td>
+                            </tr>
+                            <tr>
+                                <th>Format Tanda Tangan</th>
+                                <td>Base64 PKCS#8 & SPKI Standard</td>
+                            </tr>
+                        </table>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Application JavaScript -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+
+</html>
