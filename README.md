@@ -1,25 +1,25 @@
-# 🔏 SignKrip — Digital Signature System (Python Flask Edition)
+# SignKrip — Digital Signature System (Python Flask Edition)
 
 Sistem Tanda Tangan Digital & Verifikasi Keaslian Dokumen Elektronik Berbasis Kriptografi Asimetris (**RSA-PSS 2048-bit** dan **ECDSA P-256**), Hash **SHA-256**, Enkripsi Kunci Privat **AES-256-GCM + PBKDF2HMAC**, Pembangkit Bilangan Acak Aman Kriptografis (**CSPRNG** `os.urandom`), dan Pembaca/Pembuat **QR-Code**.
 
 ---
 
-## 👥 Tim Penyusun / Anggota Kelompok
+## Anggota Kelompok
 
-* 👤 **Fajar Guna Nuralam** — **NPM**: `247006111072`  
+*  **Fajar Guna Nuralam** — **NPM**: `247006111072`  
   *(Backend & Core Crypto Module — ECDSA/RSA, CSPRNG, PBKDF2)*
-* 👤 **Yusup** — **NPM**: `247006111027`  
+*  **Yusup** — **NPM**: `247006111027`  
   *(PDF Stamping Engine, Metadata Embedder & QR Code Generator)*
-* 👤 **Bisma Alfareza Pangestu** — **NPM**: `247006111204`  
+*  **Bisma Alfareza Pangestu** — **NPM**: `247006111204`  
   *(Verification Engine, Tamper Testing, Benchmark & Unit Tests)*
 
 ---
 
-## 📖 Deskripsi Proyek
+## Deskripsi Proyek
 
 SignKrip dirancang untuk menjamin 3 pilar utama keamanan dokumen digital: **Otentisitas** (*authenticity*), **Integritas** (*integrity*), dan **Nir-penyangkalan** (*non-repudiation*). Aplikasi ini dibangun menggunakan **Python Flask** sebagai backend server web, pustaka `cryptography` standar industri untuk operasi kriptografi tingkat tinggi, serta frontend Vanilla JS & CSS yang responsif.
 
-### 🛡️ Fitur Keamanan & Arsitektur Utama:
+### Fitur Keamanan & Arsitektur Utama:
 1. **Pembangkitan Pasangan Kunci Asimetris**: Mendukung skema **RSA-PSS 2048-bit** (MGF1 SHA-256) dan **ECDSA P-256** (`secp256r1`).
 2. **Enkripsi Kunci Privat (Zero Hardcode Secrets)**: Kunci privat dienkripsi dengan **AES-256-GCM** dan derivasi kunci **PBKDF2HMAC** (SHA-256, 100.000 iterasi). Kunci privat tidak pernah ditulis polos di kode sumber maupun disimpan mentah di server.
 3. **Pengacak Kriptografis Aman (CSPRNG)**: Salt (16 byte) dan IV (12 byte) dihasilkan menggunakan `os.urandom()` (CSPRNG).
@@ -33,36 +33,36 @@ SignKrip dirancang untuk menjamin 3 pilar utama keamanan dokumen digital: **Oten
 ## 📸 Cara Menggunakan Aplikasi Web
 
 ### 1. Membuat Pasangan Kunci Baru (Generate Keypair)
-1. Buka menu **🔑 Generate Kunci** pada peramban web (`http://localhost:5000`).
+1. Buka menu **Generate Kunci** pada peramban web (`http://localhost:5000`).
 2. Pilih algoritma kriptografi yang diinginkan (`ECDSA P-256` atau `RSA-PSS 2048-bit`).
 3. Masukkan kata sandi pengunci (misal: `KataSandiAman123!`).
-4. Klik **⚡ Generasi Pasangan Kunci**.
+4. Klik **Generasi Pasangan Kunci**.
 5. Simpan / salin **Kunci Publik** (`.pub`) dan simpan **Kunci Privat Terenkripsi** (berformat JSON memuat `salt`, `iv`, dan `ciphertext`).
 
 ### 2. Menandatangani Dokumen (Sign Document)
-1. Buka menu **✍️ Tanda Tangan Dokumen**.
+1. Buka menu **Tanda Tangan Dokumen**.
 2. Unggah berkas dokumen yang ingin ditandatangani (PDF, DOCX, TXT, dll.).
 3. Isi data Penandatangan (*Nama, Jabatan, Institusi*).
 4. Masukkan **Kata Sandi** dan tempelkan data **Kunci Privat Terenkripsi** Anda.
-5. Klik **✍️ Tandatangani Dokumen**. 
+5. Klik **Tandatangani Dokumen**. 
 6. Sistem akan mengunduh berkas PDF yang sudah terstempel QR-Code visual dan tertanam metadata signature (atau berkas `.signkrip` / `.json` untuk dokumen non-PDF).
 
 ### 3. Memverifikasi Keaslian Dokumen (Verify Document)
-1. Buka menu **🔍 Verifikasi Dokumen**.
+1. Buka menu **Verifikasi Dokumen**.
 2. Unggah berkas dokumen yang telah distempel / ditandatangani (beserta berkas `.signkrip` jika non-PDF).
-3. Klik **🔍 Verifikasi Keaslian**.
+3. Klik **Verifikasi Keaslian**.
 4. Sistem akan memberikan status:
-   * **VALID & OTENTIK ✅**: Jika dokumen asli, hash cocok, dan tanda tangan digital terverifikasi sah.
-   * **TIDAK VALID / DITAMPER ❌**: Jika dokumen telah dimodifikasi walau 1 byte, atau menggunakan kunci publik yang salah.
+   * **VALID & OTENTIK**: Jika dokumen asli, hash cocok, dan tanda tangan digital terverifikasi sah.
+   * **TIDAK VALID / DITAMPER**: Jika dokumen telah dimodifikasi walau 1 byte, atau menggunakan kunci publik yang salah.
 
 ### 4. Menjalankan Benchmark & Uji Keamanan Interaktif
-1. Buka menu **⚡ Benchmark & Security Test**.
-2. Klik **🚀 Jalankan Benchmark 30x** untuk mengukur kecepatan perbandingan ECDSA vs RSA-PSS.
-3. Klik tombol **🧪 Uji Tamper 1-Byte**, **🔑 Uji Kunci Salah**, atau **🔍 Uji Pemalsuan QR** untuk melihat simulasi penolakan sistem terhadap serangan secara langsung di web UI.
+1. Buka menu **Benchmark & Security Test**.
+2. Klik **Jalankan Benchmark 30x** untuk mengukur kecepatan perbandingan ECDSA vs RSA-PSS.
+3. Klik tombol **Uji Tamper 1-Byte**, **Uji Kunci Salah**, atau **Uji Pemalsuan QR** untuk melihat simulasi penolakan sistem terhadap serangan secara langsung di web UI.
 
 ---
 
-## 🚀 Cara Instalasi
+## Cara Instalasi
 
 ### 1. Prasyarat
 * **Python 3.8+** (Direkomendasikan Python 3.10+)
@@ -83,7 +83,7 @@ pip install -r requirements.txt
 
 ---
 
-## 💻 Cara Menjalankan Aplikasi
+## Cara Menjalankan Aplikasi
 
 ### Menjalankan Server Flask
 Jalankan perintah berikut di terminal:
@@ -95,7 +95,7 @@ Buka alamat tersebut di peramban web (Google Chrome, Microsoft Edge, atau Mozill
 
 ---
 
-## 🧪 Eksekusi Pengujian & Berkas Uji (Unit Test & Excel)
+## Eksekusi Pengujian & Berkas Uji (Unit Test & Excel)
 
 ### 1. Menjalankan Automated Unit Test (8 Unit Test Cases)
 Untuk memastikan seluruh 8 unit test fungsi inti lolos pengujian 100%:
