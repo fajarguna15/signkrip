@@ -121,11 +121,3 @@ Proyek ini dilengkapi dengan berkas uji Excel terstruktur [**`Berkas_Uji_SignKri
 * **Sheet 3 (Identitas & Lingkungan Uji)**: Data anggota kelompok, NPM, spesifikasi lingkungan Python, Flask, OpenSSL, dan repositori GitHub.
 
 ---
-
-## 📋 Checklist Kepatuhan Ketentuan Teknis Umum
-
-* [x] **Tanpa Hardcode Secret**: Kunci privat, kata sandi, dan salt tidak pernah ditulis langsung di kode sumber maupun repositori.
-* [x] **CSPRNG Aman**: Menggunakan `os.urandom()` dan OpenSSL CSPRNG untuk pembuatan Salt (16 byte), IV (12 byte), dan Kunci.
-* [x] **Tanpa Mode/Algoritma Usang**: Menggunakan **AES-256-GCM** (bukan ECB), **SHA-256** & **RSA-PSS/ECDSA** (tanpa MD5/SHA-1/DES/RC4).
-* [x] **Unit Testing Inti**: Memiliki **8 unit test** komprehensif di `test_crypto.py` (Lolos pengujian 100% PASS).
-* [x] **Dokumentasi Lengkap**: `README.md` memuat nama anggota & NPM, deskripsi, cara penggunaan web, instalasi, cara menjalankan, serta pengujian berkas uji.
